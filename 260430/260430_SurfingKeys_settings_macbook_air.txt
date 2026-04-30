@@ -1,105 +1,77 @@
 // https://github.com/ShuKoun/260430_SurfingKeys_macbook_air_chrome/raw/main/260430/260430_SurfingKeys_settings_macbook_air.txt
 
 // ======================================================
-// Surfingkeys Stable Tridactyl-like Config v0.2
-// Strategy:
-// 1. Use api.map() to remap to Surfingkeys native built-in keys.
-// 2. Avoid direct RUNTIME() calls for tab actions.
-// 3. Keep it close to Tridactyl / qutebrowser muscle memory.
+// Surfingkeys Tridactyl-like Config v0.3
+// 規範依據：brookhong/Surfingkeys 官方 API（master）
+// 寫法慣例：統一用 api.* 前綴，避免依賴全域別名
 // ======================================================
 
+// ------------------------------------------------------
+// 1. History（前進 / 後退）
+// ------------------------------------------------------
+api.map('H', 'S');              // H -> 後退
+api.map('L', 'D');              // L -> 前進
 
-// ---------- Safety ----------
-const map = api.map;
-const unmap = api.unmap;
-const mapkey = api.mapkey;
+// ------------------------------------------------------
+// 2. Tab 切換
+// 內建：E = previous tab, R = next tab
+// ------------------------------------------------------
+api.map('J', 'E');              // J -> 上一個 tab（Tridactyl 風格）
+api.map('K', 'R');              // K -> 下一個 tab
+api.map('gT', 'E');             // gT -> 上一個 tab
+api.map('gt', 'R');             // gt -> 下一個 tab
 
+// ------------------------------------------------------
+// 3. 關閉 / 還原 tab
+// 內建：x = close current tab, X = restore closed tab
+// ------------------------------------------------------
+api.map('d', 'x');              // d -> 關閉當前 tab
+api.map('u', 'X');              // u -> 還原已關 tab
 
-// ======================================================
-// 1. Core Tridactyl / qutebrowser-like mappings
-// ======================================================
+// ------------------------------------------------------
+// 4. Open / Search
+// 內建：t = open URL via omnibar
+// 注意：T、b、r 已是內建鍵，不需要 map 到自己
+// ------------------------------------------------------
+api.map('o', 't');              // o -> 在當前 tab 開新 URL（Tridactyl 風格）
 
-// History
-map("H", "S");       // H = back
-map("L", "D");       // L = forward
-
-// Tabs
-map("gt", "R");      // gt = next tab
-map("gT", "E");      // gT = previous tab
-
-map("J", "E");       // J = previous tab
-map("K", "R");       // K = next tab
-
-// Close / restore tab
-map("d", "x");       // d = close current tab
-map("u", "X");       // u = restore closed tab
-
-// Open / search
-map("o", "t");       // o = open URL/search/history via omnibar
-map("T", "T");       // T = choose tab, keep Surfingkeys default
-map("b", "b");       // b = bookmark search, keep default if available
-
-// Reload
-map("r", "r");       // r = reload
-map("R", "R");       // keep R native as next tab internally; do not rely on this directly
-
-
-// ======================================================
-// 2. Command mode approximation
-// ======================================================
-
-mapkey(":", "#8Open Surfingkeys command omnibar", function () {
-  api.Front.openOmnibar({ type: "Commands" });
+// ------------------------------------------------------
+// 5. Command omnibar（: 進入命令模式）
+// ------------------------------------------------------
+api.mapkey(':', '#8 Open command omnibar', function () {
+    api.Front.openOmnibar({ type: 'Commands' });
 });
 
-
-// ======================================================
-// 3. Copy helpers
-// ======================================================
-
-mapkey("yy", "#7Copy current URL", function () {
-  api.Clipboard.write(window.location.href);
-  api.Front.showBanner("Copied URL");
+// ------------------------------------------------------
+// 6. Yank（複製）系列
+// 注意：Surfingkeys 內建 yy = copy URL, yt = duplicate tab
+// 我們覆蓋 yt 為 copy title，並加上 yp = title + URL
+// ------------------------------------------------------
+api.mapkey('yy', '#7 Copy current URL', function () {
+    api.Clipboard.write(window.location.href);
+    api.Front.showBanner('Copied URL');
 });
 
-mapkey("yt", "#7Copy current title", function () {
-  api.Clipboard.write(document.title);
-  api.Front.showBanner("Copied title");
+api.mapkey('yt', '#7 Copy current title', function () {
+    api.Clipboard.write(document.title);
+    api.Front.showBanner('Copied title');
 });
 
-mapkey("yp", "#7Copy title and URL", function () {
-  api.Clipboard.write(document.title + "\n" + window.location.href);
-  api.Front.showBanner("Copied title + URL");
+api.mapkey('yp', '#7 Copy title and URL', function () {
+    api.Clipboard.write(document.title + '\n' + window.location.href);
+    api.Front.showBanner('Copied title + URL');
 });
 
-
-// ======================================================
-// 4. Search selected text
-// ======================================================
-
-mapkey("sg", "#8Search selected text with Google", function () {
-  const q = window.getSelection().toString().trim();
-
-  if (q.length === 0) {
-    api.Front.showBanner("No selected text");
-    return;
-  }
-
-  api.tabOpenLink(
-    "https://www.google.com/search?q=" + encodeURIComponent(q)
-  );
+// ------------------------------------------------------
+// 7. 搜尋選取文字（Google）
+// 注意：Surfingkeys 內建 sg 已經是「用 Google 搜尋選取文字」
+// 此處保留為自訂版以便未來改寫，但你也可以整段刪掉用內建
+// ------------------------------------------------------
+api.mapkey('sG', '#8 Search selected text with Google (custom)', function () {
+    const q = window.getSelection().toString().trim();
+    if (q.length === 0) {
+        api.Front.showBanner('No selected text');
+        return;
+    }
+    api.tabOpenLink('https://www.google.com/search?q=' + encodeURIComponent(q));
 });
-
-
-// ======================================================
-// 5. Optional: avoid accidental original close keys
-// ======================================================
-//
-// Important:
-// We do NOT unmap x / X here.
-// Reason:
-// d -> x and u -> X depend on x / X existing as native actions.
-// If you unmap x / X, d / u may also stop working.
-//
-// So keep x / X alive.
-// You can simply train yourself to use d / u.
