@@ -1,35 +1,105 @@
-// ===== Tridactyl-like keymap (fixed version) =====
 // https://github.com/ShuKoun/260430_SurfingKeys_macbook_air_chrome/raw/main/260430/260430_SurfingKeys_settings_macbook_air.txt
 
-// Tab navigation (J/K like Tridactyl users often do)
-mapkey('J', 'Previous tab', function() {
-    RUNTIME('previousTab');
+// ======================================================
+// Surfingkeys Stable Tridactyl-like Config v0.2
+// Strategy:
+// 1. Use api.map() to remap to Surfingkeys native built-in keys.
+// 2. Avoid direct RUNTIME() calls for tab actions.
+// 3. Keep it close to Tridactyl / qutebrowser muscle memory.
+// ======================================================
+
+
+// ---------- Safety ----------
+const map = api.map;
+const unmap = api.unmap;
+const mapkey = api.mapkey;
+
+
+// ======================================================
+// 1. Core Tridactyl / qutebrowser-like mappings
+// ======================================================
+
+// History
+map("H", "S");       // H = back
+map("L", "D");       // L = forward
+
+// Tabs
+map("gt", "R");      // gt = next tab
+map("gT", "E");      // gT = previous tab
+
+map("J", "E");       // J = previous tab
+map("K", "R");       // K = next tab
+
+// Close / restore tab
+map("d", "x");       // d = close current tab
+map("u", "X");       // u = restore closed tab
+
+// Open / search
+map("o", "t");       // o = open URL/search/history via omnibar
+map("T", "T");       // T = choose tab, keep Surfingkeys default
+map("b", "b");       // b = bookmark search, keep default if available
+
+// Reload
+map("r", "r");       // r = reload
+map("R", "R");       // keep R native as next tab internally; do not rely on this directly
+
+
+// ======================================================
+// 2. Command mode approximation
+// ======================================================
+
+mapkey(":", "#8Open Surfingkeys command omnibar", function () {
+  api.Front.openOmnibar({ type: "Commands" });
 });
 
-mapkey('K', 'Next tab', function() {
-    RUNTIME('nextTab');
+
+// ======================================================
+// 3. Copy helpers
+// ======================================================
+
+mapkey("yy", "#7Copy current URL", function () {
+  api.Clipboard.write(window.location.href);
+  api.Front.showBanner("Copied URL");
 });
 
-// gt / gT style
-mapkey('gt', 'Next tab', function() {
-    RUNTIME('nextTab');
+mapkey("yt", "#7Copy current title", function () {
+  api.Clipboard.write(document.title);
+  api.Front.showBanner("Copied title");
 });
 
-mapkey('gT', 'Previous tab', function() {
-    RUNTIME('previousTab');
+mapkey("yp", "#7Copy title and URL", function () {
+  api.Clipboard.write(document.title + "\n" + window.location.href);
+  api.Front.showBanner("Copied title + URL");
 });
 
-// Close tab
-mapkey('d', 'Close tab', function() {
-    RUNTIME('closeTab');
+
+// ======================================================
+// 4. Search selected text
+// ======================================================
+
+mapkey("sg", "#8Search selected text with Google", function () {
+  const q = window.getSelection().toString().trim();
+
+  if (q.length === 0) {
+    api.Front.showBanner("No selected text");
+    return;
+  }
+
+  api.tabOpenLink(
+    "https://www.google.com/search?q=" + encodeURIComponent(q)
+  );
 });
 
-// Restore tab
-mapkey('u', 'Restore tab', function() {
-    RUNTIME('openLast');
-});
 
-// Open URL / search
-mapkey('o', 'Open URL', function() {
-    Front.openOmnibar({type: "URLs"});
-});
+// ======================================================
+// 5. Optional: avoid accidental original close keys
+// ======================================================
+//
+// Important:
+// We do NOT unmap x / X here.
+// Reason:
+// d -> x and u -> X depend on x / X existing as native actions.
+// If you unmap x / X, d / u may also stop working.
+//
+// So keep x / X alive.
+// You can simply train yourself to use d / u.
