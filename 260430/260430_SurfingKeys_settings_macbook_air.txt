@@ -1,0 +1,41 @@
+// ===== Surfingkeys Tridactyl-like keymap v0.1 =====
+
+// Help
+map('?', 'u');      // show help, closer to Vim help habit if you prefer ?
+
+// Basic scrolling: keep Vim-like defaults
+// j / k / h / l usually already work.
+
+// History
+map('H', 'S');      // back
+map('L', 'D');      // forward
+
+// Tabs: Tridactyl/qutebrowser style
+map('gt', 'R');     // next tab in Surfingkeys default
+map('gT', 'E');     // previous tab in Surfingkeys default
+
+// Optional: qutebrowser/Tridactyl-like fast tab switching
+map('J', 'E');      // previous tab
+map('K', 'R');      // next tab
+
+// Open / search
+map('o', 't');      // open URL / search / bookmark/history
+map('O', 'T');      // choose/switch tabs, approximate command-like tab selector
+
+// Close / restore tabs
+map('d', 'x');      // close current tab
+map('u', 'X');      // restore closed tab
+
+// Duplicate tab
+map('gd', 'yt');    // duplicate current tab if yt is available in your version
+
+// Hints
+// f usually already follows links.
+// F usually opens link in new tab in many Vim-like extensions.
+// Keep Surfingkeys defaults first unless conflict appears.
+
+// Disable dangerous/annoying defaults if needed
+// unmap(';j');
+// unmap(';q');
+// unmap('sr');
+// unmap('se');
