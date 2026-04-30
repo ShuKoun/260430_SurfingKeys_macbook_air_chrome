@@ -1,4 +1,5 @@
 // ===== Tridactyl-like keymap (fixed version) =====
+// https://github.com/ShuKoun/260430_SurfingKeys_macbook_air_chrome/raw/main/260430/260430_SurfingKeys_settings_macbook_air.txt
 
 // Tab navigation (J/K like Tridactyl users often do)
 mapkey('J', 'Previous tab', function() {
