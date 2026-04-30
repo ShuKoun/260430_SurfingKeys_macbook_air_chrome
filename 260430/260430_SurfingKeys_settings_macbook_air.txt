@@ -211,11 +211,20 @@
     });
   });
 
-  bind("T", "#3Choose tab", function () {
-    openOmnibar({
-      type: "Tabs"
-    });
-  });
+  // bind("T", "#3Choose tab", function () {
+  //   openOmnibar({
+  //     type: "Tabs"
+  //   });
+  // });
+
+  // 保留原生 T：tabs overlay + hint 跳轉
+// 不要 unmap T
+// 不要 mapkey T
+
+// 額外提供 fuzzy tab search
+api.mapkey('tb', '#3Search tabs with omnibar', function() {
+    api.Front.openOmnibar({ type: 'Tabs' });
+}, { repeatIgnore: true });
 
   bind(":", "#8Open Surfingkeys commands", function () {
     openOmnibar({
