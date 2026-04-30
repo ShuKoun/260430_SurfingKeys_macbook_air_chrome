@@ -1,77 +1,265 @@
 // https://github.com/ShuKoun/260430_SurfingKeys_macbook_air_chrome/raw/main/260430/260430_SurfingKeys_settings_macbook_air.txt
 
 // ======================================================
-// Surfingkeys Tridactyl-like Config v0.3
-// 規範依據：brookhong/Surfingkeys 官方 API（master）
-// 寫法慣例：統一用 api.* 前綴，避免依賴全域別名
+// Surfingkeys Stable Tridactyl-like Config v0.3
+// 修復重點：
+// 1. 不使用 api.map() 做核心映射
+// 2. 不把 api.map / api.mapkey 解構成裸函數
+// 3. 先 unmap，再 mapkey
+// 4. tab / close 優先調用 Surfingkeys 原生鍵：
+//    R = next tab, E = previous tab, x = close tab, X = restore tab
 // ======================================================
 
-// ------------------------------------------------------
-// 1. History（前進 / 後退）
-// ------------------------------------------------------
-api.map('H', 'S');              // H -> 後退
-api.map('L', 'D');              // L -> 前進
+(function () {
+  const G = globalThis;
+  const A = typeof api !== "undefined" && api ? api : G;
 
-// ------------------------------------------------------
-// 2. Tab 切換
-// 內建：E = previous tab, R = next tab
-// ------------------------------------------------------
-api.map('J', 'E');              // J -> 上一個 tab（Tridactyl 風格）
-api.map('K', 'R');              // K -> 下一個 tab
-api.map('gT', 'E');             // gT -> 上一個 tab
-api.map('gt', 'R');             // gt -> 下一個 tab
-
-// ------------------------------------------------------
-// 3. 關閉 / 還原 tab
-// 內建：x = close current tab, X = restore closed tab
-// ------------------------------------------------------
-api.map('d', 'x');              // d -> 關閉當前 tab
-api.map('u', 'X');              // u -> 還原已關 tab
-
-// ------------------------------------------------------
-// 4. Open / Search
-// 內建：t = open URL via omnibar
-// 注意：T、b、r 已是內建鍵，不需要 map 到自己
-// ------------------------------------------------------
-api.map('o', 't');              // o -> 在當前 tab 開新 URL（Tridactyl 風格）
-
-// ------------------------------------------------------
-// 5. Command omnibar（: 進入命令模式）
-// ------------------------------------------------------
-api.mapkey(':', '#8 Open command omnibar', function () {
-    api.Front.openOmnibar({ type: 'Commands' });
-});
-
-// ------------------------------------------------------
-// 6. Yank（複製）系列
-// 注意：Surfingkeys 內建 yy = copy URL, yt = duplicate tab
-// 我們覆蓋 yt 為 copy title，並加上 yp = title + URL
-// ------------------------------------------------------
-api.mapkey('yy', '#7 Copy current URL', function () {
-    api.Clipboard.write(window.location.href);
-    api.Front.showBanner('Copied URL');
-});
-
-api.mapkey('yt', '#7 Copy current title', function () {
-    api.Clipboard.write(document.title);
-    api.Front.showBanner('Copied title');
-});
-
-api.mapkey('yp', '#7 Copy title and URL', function () {
-    api.Clipboard.write(document.title + '\n' + window.location.href);
-    api.Front.showBanner('Copied title + URL');
-});
-
-// ------------------------------------------------------
-// 7. 搜尋選取文字（Google）
-// 注意：Surfingkeys 內建 sg 已經是「用 Google 搜尋選取文字」
-// 此處保留為自訂版以便未來改寫，但你也可以整段刪掉用內建
-// ------------------------------------------------------
-api.mapkey('sG', '#8 Search selected text with Google (custom)', function () {
-    const q = window.getSelection().toString().trim();
-    if (q.length === 0) {
-        api.Front.showBanner('No selected text');
-        return;
+  function apiFn(name) {
+    if (A && typeof A[name] === "function") {
+      return A[name].bind(A);
     }
-    api.tabOpenLink('https://www.google.com/search?q=' + encodeURIComponent(q));
-});
+    if (typeof G[name] === "function") {
+      return G[name].bind(G);
+    }
+    throw new Error("[Surfingkeys config] Missing API: " + name);
+  }
+
+  const skMapkey = apiFn("mapkey");
+
+  function skUnmap(keys) {
+    try {
+      if (A && typeof A.unmap === "function") {
+        A.unmap(keys);
+      } else if (typeof G.unmap === "function") {
+        G.unmap(keys);
+      }
+    } catch (e) {
+      // ignore unmap errors
+    }
+  }
+
+  function getObj(name) {
+    return (A && A[name]) || G[name];
+  }
+
+  function showBanner(msg) {
+    const Front = getObj("Front");
+    if (Front && typeof Front.showBanner === "function") {
+      Front.showBanner(msg);
+    }
+  }
+
+  function feed(keys) {
+    const Normal = getObj("Normal");
+    if (Normal && typeof Normal.feedkeys === "function") {
+      Normal.feedkeys(keys);
+      return true;
+    }
+    return false;
+  }
+
+  function runtime(action, args) {
+    const R = (A && typeof A.RUNTIME === "function") ? A.RUNTIME : G.RUNTIME;
+    if (typeof R === "function") {
+      R(action, args || {});
+      return true;
+    }
+    return false;
+  }
+
+  function nativeAction(nativeKeys, runtimeAction, args) {
+    // 優先走 Surfingkeys 已有原生鍵位，避免 RUNTIME 在某些版本中不穩
+    if (feed(nativeKeys)) {
+      return;
+    }
+
+    // fallback
+    if (runtime(runtimeAction, args)) {
+      return;
+    }
+
+    showBanner("Surfingkeys action failed: " + nativeKeys + " / " + runtimeAction);
+  }
+
+  function bind(keys, annotation, fn, options) {
+    skUnmap(keys);
+    skMapkey(keys, annotation, fn, options || { repeatIgnore: true });
+  }
+
+  function openOmnibar(args) {
+    const Front = getObj("Front");
+    if (Front && typeof Front.openOmnibar === "function") {
+      Front.openOmnibar(args);
+    } else {
+      showBanner("Front.openOmnibar unavailable");
+    }
+  }
+
+  function copyText(text, msg) {
+    const Clipboard = getObj("Clipboard");
+
+    if (Clipboard && typeof Clipboard.write === "function") {
+      Clipboard.write(text);
+      showBanner(msg || "Copied");
+      return;
+    }
+
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      navigator.clipboard.writeText(text).then(function () {
+        showBanner(msg || "Copied");
+      });
+      return;
+    }
+
+    showBanner("Clipboard unavailable");
+  }
+
+  function openNewTab(url) {
+    const f = (A && A.tabOpenLink) || G.tabOpenLink;
+    if (typeof f === "function") {
+      f(url);
+    } else {
+      window.open(url, "_blank");
+    }
+  }
+
+  // ------------------------------------------------------
+  // Basic settings
+  // ------------------------------------------------------
+
+  if (typeof settings !== "undefined") {
+    settings.hintAlign = "left";
+    settings.tabsMRUOrder = false;
+    settings.focusAfterClosed = "right";
+  }
+
+  // ------------------------------------------------------
+  // Diagnostics
+  // ------------------------------------------------------
+
+  bind(";sk", "#0Test Surfingkeys config", function () {
+    showBanner("Surfingkeys Tridactyl-like config v0.3 active");
+  });
+
+  // ------------------------------------------------------
+  // History: Tridactyl / qutebrowser style
+  // ------------------------------------------------------
+
+  bind("H", "#4Go back in history", function () {
+    history.go(-1);
+  });
+
+  bind("L", "#4Go forward in history", function () {
+    history.go(1);
+  });
+
+  // ------------------------------------------------------
+  // Tabs
+  //
+  // Surfingkeys 原生默認：
+  // E = previous tab
+  // R = next tab
+  // x = close current tab
+  // X = restore closed tab
+  // ------------------------------------------------------
+
+  bind("gt", "#3Next tab", function () {
+    nativeAction("R", "nextTab");
+  });
+
+  bind("gT", "#3Previous tab", function () {
+    nativeAction("E", "previousTab");
+  });
+
+  bind("K", "#3Next tab", function () {
+    nativeAction("R", "nextTab");
+  });
+
+  bind("J", "#3Previous tab", function () {
+    nativeAction("E", "previousTab");
+  });
+
+  bind("d", "#3Close current tab", function () {
+    nativeAction("x", "closeTab");
+  });
+
+  bind("u", "#3Restore closed tab", function () {
+    nativeAction("X", "openLast");
+  });
+
+  // ------------------------------------------------------
+  // Open / search
+  // ------------------------------------------------------
+
+  bind("o", "#8Open URL/search in current tab", function () {
+    openOmnibar({
+      type: "URLs",
+      tabbed: false
+    });
+  });
+
+  bind("t", "#8Open URL/search in new tab", function () {
+    openOmnibar({
+      type: "URLs",
+      tabbed: true
+    });
+  });
+
+  bind("b", "#8Open bookmarks", function () {
+    openOmnibar({
+      type: "Bookmarks"
+    });
+  });
+
+  bind("T", "#3Choose tab", function () {
+    openOmnibar({
+      type: "Tabs"
+    });
+  });
+
+  bind(":", "#8Open Surfingkeys commands", function () {
+    openOmnibar({
+      type: "Commands"
+    });
+  });
+
+  // ------------------------------------------------------
+  // Reload
+  // ------------------------------------------------------
+
+  bind("r", "#4Reload current page", function () {
+    runtime("reloadTab", { nocache: false }) || location.reload();
+  });
+
+  // ------------------------------------------------------
+  // Copy helpers
+  // ------------------------------------------------------
+
+  bind("yy", "#7Copy current URL", function () {
+    copyText(window.location.href, "Copied URL");
+  });
+
+  bind("yl", "#7Copy current title", function () {
+    copyText(document.title, "Copied title");
+  });
+
+  bind("yp", "#7Copy title and URL", function () {
+    copyText(document.title + "\n" + window.location.href, "Copied title + URL");
+  });
+
+  // ------------------------------------------------------
+  // Search selected text
+  // ------------------------------------------------------
+
+  bind("sg", "#8Search selected text with Google", function () {
+    const q = window.getSelection().toString().trim();
+
+    if (!q) {
+      showBanner("No selected text");
+      return;
+    }
+
+    openNewTab("https://www.google.com/search?q=" + encodeURIComponent(q));
+  });
+
+})();
