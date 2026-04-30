@@ -1,41 +1,34 @@
-// ===== Surfingkeys Tridactyl-like keymap v0.1 =====
+// ===== Tridactyl-like keymap (fixed version) =====
 
-// Help
-map('?', 'u');      // show help, closer to Vim help habit if you prefer ?
+// Tab navigation (J/K like Tridactyl users often do)
+mapkey('J', 'Previous tab', function() {
+    RUNTIME('previousTab');
+});
 
-// Basic scrolling: keep Vim-like defaults
-// j / k / h / l usually already work.
+mapkey('K', 'Next tab', function() {
+    RUNTIME('nextTab');
+});
 
-// History
-map('H', 'S');      // back
-map('L', 'D');      // forward
+// gt / gT style
+mapkey('gt', 'Next tab', function() {
+    RUNTIME('nextTab');
+});
 
-// Tabs: Tridactyl/qutebrowser style
-map('gt', 'R');     // next tab in Surfingkeys default
-map('gT', 'E');     // previous tab in Surfingkeys default
+mapkey('gT', 'Previous tab', function() {
+    RUNTIME('previousTab');
+});
 
-// Optional: qutebrowser/Tridactyl-like fast tab switching
-map('J', 'E');      // previous tab
-map('K', 'R');      // next tab
+// Close tab
+mapkey('d', 'Close tab', function() {
+    RUNTIME('closeTab');
+});
 
-// Open / search
-map('o', 't');      // open URL / search / bookmark/history
-map('O', 'T');      // choose/switch tabs, approximate command-like tab selector
+// Restore tab
+mapkey('u', 'Restore tab', function() {
+    RUNTIME('openLast');
+});
 
-// Close / restore tabs
-map('d', 'x');      // close current tab
-map('u', 'X');      // restore closed tab
-
-// Duplicate tab
-map('gd', 'yt');    // duplicate current tab if yt is available in your version
-
-// Hints
-// f usually already follows links.
-// F usually opens link in new tab in many Vim-like extensions.
-// Keep Surfingkeys defaults first unless conflict appears.
-
-// Disable dangerous/annoying defaults if needed
-// unmap(';j');
-// unmap(';q');
-// unmap('sr');
-// unmap('se');
+// Open URL / search
+mapkey('o', 'Open URL', function() {
+    Front.openOmnibar({type: "URLs"});
+});
